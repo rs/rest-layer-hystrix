@@ -3,11 +3,11 @@
 package restrix
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/rs/rest-layer/resource"
-	"golang.org/x/net/context"
 )
 
 type wrapper struct {
