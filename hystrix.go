@@ -91,10 +91,10 @@ func (w wrapper) Clear(ctx context.Context, lookup *resource.Lookup) (deleted in
 	return
 }
 
-func (w wrapper) Find(ctx context.Context, lookup *resource.Lookup, page, perPage int) (list *resource.ItemList, err error) {
+func (w wrapper) Find(ctx context.Context, lookup *resource.Lookup, offset, limit int) (list *resource.ItemList, err error) {
 	out := make(chan *resource.ItemList, 1)
 	errs := hystrix.Go(w.findCmd, func() error {
-		list, err := w.Storer.Find(ctx, lookup, page, perPage)
+		list, err := w.Storer.Find(ctx, lookup, offset, limit)
 		if err == nil {
 			out <- list
 		}
