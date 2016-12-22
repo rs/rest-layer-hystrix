@@ -14,6 +14,7 @@ type wrapper struct {
 	resource.Storer
 	getCmd    string
 	findCmd   string
+	countCmd  string
 	insertCmd string
 	updateCmd string
 	deleteCmd string
@@ -43,6 +44,7 @@ func Wrap(name string, h resource.Storer) resource.Storer {
 		Storer:    h,
 		getCmd:    fmt.Sprintf("%s.Get", name),
 		findCmd:   fmt.Sprintf("%s.Find", name),
+		countCmd:  fmt.Sprintf("%s.Count", name),
 		insertCmd: fmt.Sprintf("%s.Insert", name),
 		updateCmd: fmt.Sprintf("%s.Update", name),
 		deleteCmd: fmt.Sprintf("%s.Delete", name),
@@ -102,6 +104,26 @@ func (w wrapper) Find(ctx context.Context, lookup *resource.Lookup, offset, limi
 	}, nil)
 	select {
 	case list = <-out:
+	case err = <-errs:
+	}
+	return
+}
+
+func (w wrapper) Count(ctx context.Context, lookup *resource.Lookup) (total int, err error) {
+	c, ok := w.Storer.(resource.Counter)
+	if !ok {
+		return -1, resource.ErrNotImplemented
+	}
+	out := make(chan int, 1)
+	errs := hystrix.Go(w.countCmd, func() error {
+		total, err := c.Count(ctx, lookup)
+		if err == nil {
+			out <- total
+		}
+		return err
+	}, nil)
+	select {
+	case total = <-out:
 	case err = <-errs:
 	}
 	return
