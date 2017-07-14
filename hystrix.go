@@ -8,6 +8,7 @@ import (
 
 	"github.com/afex/hystrix-go/hystrix"
 	"github.com/rs/rest-layer/resource"
+	"github.com/rs/rest-layer/schema/query"
 )
 
 type wrapper struct {
@@ -77,10 +78,10 @@ func (w wrapper) Delete(ctx context.Context, item *resource.Item) error {
 	}, nil)
 }
 
-func (w wrapper) Clear(ctx context.Context, lookup *resource.Lookup) (deleted int, err error) {
+func (w wrapper) Clear(ctx context.Context, q *query.Query) (deleted int, err error) {
 	out := make(chan int, 1)
 	errs := hystrix.Go(w.clearCmd, func() error {
-		deleted, err := w.Storer.Clear(ctx, lookup)
+		deleted, err := w.Storer.Clear(ctx, q)
 		if err == nil {
 			out <- deleted
 		}
@@ -93,10 +94,10 @@ func (w wrapper) Clear(ctx context.Context, lookup *resource.Lookup) (deleted in
 	return
 }
 
-func (w wrapper) Find(ctx context.Context, lookup *resource.Lookup, offset, limit int) (list *resource.ItemList, err error) {
+func (w wrapper) Find(ctx context.Context, q *query.Query) (list *resource.ItemList, err error) {
 	out := make(chan *resource.ItemList, 1)
 	errs := hystrix.Go(w.findCmd, func() error {
-		list, err := w.Storer.Find(ctx, lookup, offset, limit)
+		list, err := w.Storer.Find(ctx, q)
 		if err == nil {
 			out <- list
 		}
@@ -109,14 +110,14 @@ func (w wrapper) Find(ctx context.Context, lookup *resource.Lookup, offset, limi
 	return
 }
 
-func (w wrapper) Count(ctx context.Context, lookup *resource.Lookup) (total int, err error) {
+func (w wrapper) Count(ctx context.Context, q *query.Query) (total int, err error) {
 	c, ok := w.Storer.(resource.Counter)
 	if !ok {
 		return -1, resource.ErrNotImplemented
 	}
 	out := make(chan int, 1)
 	errs := hystrix.Go(w.countCmd, func() error {
-		total, err := c.Count(ctx, lookup)
+		total, err := c.Count(ctx, q)
 		if err == nil {
 			out <- total
 		}
